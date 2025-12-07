@@ -1,0 +1,99 @@
+{
+  "name": "TrustBridge - Professional Career & Investment Platform",
+  "short_name": "TrustBridge",
+  "description": "AI-Powered CV Builder, Global Job Matching & Diaspora Investment Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F3F2EF",
+  "theme_color": "#0A66C2",
+  "orientation": "any",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/trust.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/trust.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/trust.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/trust.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/trust.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/trust.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/trust.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/trust.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "finance", "productivity", "professional"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "CV Builder",
+      "short_name": "CV Builder",
+      "description": "Build your AI-powered professional CV",
+      "url": "/cv-builder",
+      "icons": [{ "src": "/trust.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Job Matcher",
+      "short_name": "Jobs",
+      "description": "Find matching job opportunities",
+      "url": "/cv-builder?tab=jobs",
+      "icons": [{ "src": "/trust.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Investments",
+      "short_name": "Invest",
+      "description": "Browse investment opportunities",
+      "url": "/investor-platform",
+      "icons": [{ "src": "/trust.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Startup Dashboard",
+      "short_name": "Startup",
+      "description": "Manage your startup",
+      "url": "/startup-dashboard",
+      "icons": [{ "src": "/trust.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "dir": "ltr",
+  "lang": "en",
+  "iarc_rating_id": ""
+}
+

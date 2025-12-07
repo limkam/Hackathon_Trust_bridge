@@ -1,0 +1,37 @@
+{
+  "name": "trustbridge-blockchain",
+  "version": "1.0.0",
+  "description": "TrustBridge SL - Solana-based blockchain infrastructure for verified talent pipeline",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --testTimeout=30000",
+    "test:certificate": "jest tests/certificate.test.js",
+    "test:startup": "jest tests/startup.test.js",
+    "test:investment": "jest tests/investment.test.js",
+    "build": "anchor build && node scripts/fix-idl.js",
+    "fix-idl": "node scripts/fix-idl.js",
+    "deploy": "anchor deploy",
+    "deploy:devnet": "anchor deploy --provider.cluster devnet"
+  },
+  "keywords": [
+    "solana",
+    "blockchain",
+    "certificates",
+    "trustbridge",
+    "sierra-leone"
+  ],
+  "author": "TrustBridge SL",
+  "license": "MIT",
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@coral-xyz/borsh": "^0.29.0",
+    "@solana/web3.js": "^1.87.6",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

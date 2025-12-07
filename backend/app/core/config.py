@@ -1,0 +1,51 @@
+from pydantic_settings import BaseSettings
+from typing import Optional
+
+
+class Settings(BaseSettings):
+    # Database
+    DATABASE_URL: str = "postgresql://user:password@localhost:5432/trustbridge_db"
+    
+    # JWT
+    SECRET_KEY: str = "your-secret-key-change-in-production"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    
+    # Solana
+    SOLANA_RPC_URL: str = "https://api.devnet.solana.com"
+    WALLET_PATH: str = "~/.config/solana/id.json"
+    
+    # Program IDs
+    CERTIFICATE_PROGRAM_ID: str = "D7SYneSxju3iTtJW9HPQMVjQRXgTCZi2vR2UWRk8nTRa"
+    STARTUP_PROGRAM_ID: str = "DqwhC5DDZZmL4E1f4YYQJ9R121NurZV8ttk2dfGoYnTj"
+    INVESTMENT_PROGRAM_ID: str = "FEQJZDk4afcXbSrRj7iW3PieNtrmeT2Hjtt5BCmoNfRr"
+    
+    # Blockchain Scripts Path
+    BLOCKCHAIN_SCRIPTS_PATH: str = "../blockchain/scripts"
+    
+    # AI Service (Optional)
+    OPENAI_API_KEY: Optional[str] = None
+    
+    # Job Search API Keys (Optional)
+    ADZUNA_APP_ID: Optional[str] = None
+    ADZUNA_APP_KEY: Optional[str] = None
+    JOOBLE_API_KEY: Optional[str] = None
+    SERPAPI_KEY: Optional[str] = None
+    
+    # App
+    APP_NAME: str = "TrustBridge API"
+    APP_VERSION: str = "1.0.0"
+    DEBUG: bool = True
+    
+    # File Uploads
+    UPLOAD_DIR: str = "static/uploads"
+    MAX_UPLOAD_SIZE: int = 5 * 1024 * 1024  # 5MB
+    ALLOWED_IMAGE_TYPES: list = ["image/jpeg", "image/png", "image/jpg", "image/webp"]
+    
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+
+
+settings = Settings()
+

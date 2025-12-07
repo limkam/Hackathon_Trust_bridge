@@ -1,0 +1,18 @@
+[workspace]
+members = [
+    "programs/certificate-registry",
+    "programs/startup-registry",
+    "programs/investment-ledger",
+]
+resolver = "2"
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1
+
+[profile.release.build-override]
+opt-level = 3
+incremental = true
+codegen-units = 1
+

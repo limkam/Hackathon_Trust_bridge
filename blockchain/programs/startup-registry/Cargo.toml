@@ -1,0 +1,23 @@
+[package]
+name = "startup-registry"
+version = "0.1.0"
+description = "TrustBridge SL Startup Registry Program"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "startup_registry"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = "0.32.1"
+anchor-spl = "0.32.1"
+certificate-registry = { path = "../certificate-registry", features = ["cpi"] }
+
