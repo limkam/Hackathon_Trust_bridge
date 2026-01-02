@@ -15,7 +15,7 @@ class AdvancedCVService:
     """Advanced CV service with AI-powered features."""
     
     def __init__(self):
-        self.openai_key = settings.OPENAI_API_KEY
+        self.mistral_key = settings.MISTRAL_API_KEY or settings.OPENAI_API_KEY  # Backward compatibility
     
     def generate_cv_from_questions(self, answers: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -29,17 +29,17 @@ class AdvancedCVService:
         """
         logger.info("Generating CV from questionnaire answers")
         
-        if not self.openai_key:
+        if not self.mistral_key:
             return self._generate_cv_fallback(answers)
         
         try:
-            import openai
-            client = openai.OpenAI(api_key=self.openai_key)
+            from mistralai import Mistral
+            client = Mistral(api_key=self.mistral_key)
             
             prompt = self._build_cv_generation_prompt(answers)
             
-            response = client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+            response = client.chat.complete(
+                model="mistral-medium-latest",
                 messages=[
                     {
                         "role": "system",
@@ -86,12 +86,12 @@ class AdvancedCVService:
         """
         logger.info("Computing job compatibility")
         
-        if not self.openai_key:
+        if not self.mistral_key:
             return self._match_job_fallback(cv_data, job_description)
         
         try:
-            import openai
-            client = openai.OpenAI(api_key=self.openai_key)
+            from mistralai import Mistral
+            client = Mistral(api_key=self.mistral_key)
             
             cv_summary = json.dumps(cv_data, indent=2)
             
@@ -119,8 +119,8 @@ Provide analysis in JSON format:
     "weaknesses": ["weakness1", "weakness2"]
 }}"""
             
-            response = client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+            response = client.chat.complete(
+                model="mistral-medium-latest",
                 messages=[
                     {
                         "role": "system",
@@ -152,12 +152,12 @@ Provide analysis in JSON format:
         compatibility = self.match_job_compatibility(cv_data, job_description)
         recommendations = compatibility.get("analysis", {}).get("recommendations", [])
         
-        if not self.openai_key:
-            return {"success": False, "message": "OpenAI API key not configured"}
+        if not self.mistral_key:
+            return {"success": False, "message": "Mistral AI API key not configured"}
         
         try:
-            import openai
-            client = openai.OpenAI(api_key=self.openai_key)
+            from mistralai import Mistral
+            client = Mistral(api_key=self.mistral_key)
             
             prompt = f"""Optimize this CV for the specific job description.
 
@@ -179,8 +179,8 @@ Create an optimized version that:
 
 Return optimized CV in same JSON format."""
             
-            response = client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+            response = client.chat.complete(
+                model="mistral-medium-latest",
                 messages=[
                     {
                         "role": "system",
@@ -210,12 +210,12 @@ Return optimized CV in same JSON format."""
         """Generate personalized cover letter"""
         logger.info("Generating cover letter")
         
-        if not self.openai_key:
-            return {"success": False, "message": "OpenAI API key not configured"}
+        if not self.mistral_key:
+            return {"success": False, "message": "Mistral AI API key not configured"}
         
         try:
-            import openai
-            client = openai.OpenAI(api_key=self.openai_key)
+            from mistralai import Mistral
+            client = Mistral(api_key=self.mistral_key)
             
             prompt = f"""Write a professional, personalized cover letter.
 
@@ -237,8 +237,8 @@ Requirements:
 
 Generate the cover letter text."""
             
-            response = client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+            response = client.chat.complete(
+                model="mistral-medium-latest",
                 messages=[
                     {
                         "role": "system",
@@ -296,12 +296,12 @@ Generate the cover letter text."""
         """Generate interview questions based on CV and job description"""
         logger.info("Generating interview questions")
         
-        if not self.openai_key:
-            return {"success": False, "message": "OpenAI API key not configured"}
+        if not self.mistral_key:
+            return {"success": False, "message": "Mistral AI API key not configured"}
         
         try:
-            import openai
-            client = openai.OpenAI(api_key=self.openai_key)
+            from mistralai import Mistral
+            client = Mistral(api_key=self.mistral_key)
             
             prompt = f"""Generate interview questions for this candidate and role.
 
@@ -326,8 +326,8 @@ Format as JSON:
     "situational": [...]
 }}"""
             
-            response = client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+            response = client.chat.complete(
+                model="mistral-medium-latest",
                 messages=[
                     {
                         "role": "system",
@@ -535,15 +535,15 @@ Generate a complete, ATS-optimized CV in JSON format."""
         """
         logger.info(f"Getting suggestions for field: {field}")
         
-        if not self.openai_key:
+        if not self.mistral_key:
             return {
                 "success": False,
                 "suggestions": self._get_fallback_suggestions(field, current_value)
             }
         
         try:
-            import openai
-            client = openai.OpenAI(api_key=self.openai_key)
+            from mistralai import Mistral
+            client = Mistral(api_key=self.mistral_key)
             
             # Build context-aware prompt
             context_str = ""
@@ -578,8 +578,8 @@ Requirements:
 Return ONLY a JSON array of strings, no other text:
 ["suggestion 1", "suggestion 2", "suggestion 3", ...]"""
             
-            response = client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+            response = client.chat.complete(
+                model="mistral-medium-latest",
                 messages=[
                     {
                         "role": "system",

@@ -4,7 +4,7 @@
 
 **AI-Powered Career Development & Diaspora Investment Platform**
 
-*Connecting Talent with Opportunity | Empowering Global Investments*
+_Connecting Talent with Opportunity | Empowering Global Investments_
 
 [![Next.js](https://img.shields.io/badge/Next.js-14.0-black?logo=next.js)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green?logo=fastapi)](https://fastapi.tiangolo.com/)
@@ -57,6 +57,7 @@
 ## ✨ Features
 
 ### Career Development
+
 - ✅ AI-powered CV generation and optimization
 - ✅ ATS (Applicant Tracking System) compatibility scoring
 - ✅ Real-time language enhancement suggestions
@@ -67,7 +68,9 @@
 - ✅ Multi-format export (PDF, DOCX, Web)
 
 ### Job Matching
-- ✅ Multi-source job aggregation (Adzuna, Jooble, SerpAPI, RSS)
+
+- ✅ RemoteOK integration (free public API - 1000+ remote jobs)
+- ✅ Freelancer.com support (OAuth pending)
 - ✅ Database-powered job search (364+ curated jobs)
 - ✅ AI-powered matching algorithm
 - ✅ CV-based automatic keyword extraction
@@ -76,6 +79,7 @@
 - ✅ Real-time job updates
 
 ### Investment Platform
+
 - ✅ Blockchain-verified startup registration
 - ✅ Credibility scoring system
 - ✅ Investment tracking on Solana
@@ -85,6 +89,7 @@
 - ✅ Due diligence tools
 
 ### User Experience
+
 - ✅ LinkedIn-inspired professional UI/UX
 - ✅ Progressive Web App (PWA) support
 - ✅ Offline functionality
@@ -97,6 +102,7 @@
 ## 🛠️ Technology Stack
 
 ### Frontend
+
 - **Framework**: [Next.js 14](https://nextjs.org/) (React 18.2)
 - **Styling**: [Tailwind CSS 3.3](https://tailwindcss.com/)
 - **Animations**: [Framer Motion](https://www.framer.com/motion/)
@@ -106,6 +112,7 @@
 - **Authentication**: [Privy](https://privy.io/) (optional)
 
 ### Backend
+
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3.12)
 - **Database**: [PostgreSQL](https://www.postgresql.org/)
 - **ORM**: [SQLAlchemy](https://www.sqlalchemy.org/)
@@ -114,17 +121,20 @@
 - **API Documentation**: Automatic OpenAPI/Swagger
 
 ### AI & Machine Learning
+
 - **AI Service**: [OpenAI GPT](https://openai.com/)
 - **NLP**: Custom matching algorithms
 - **CV Analysis**: ATS optimization and scoring
 
 ### Blockchain
+
 - **Blockchain**: [Solana](https://solana.com/)
 - **Programs**: Rust-based Solana programs
 - **Wallets**: Solana Wallet Adapter
 - **Payments**: USDC (SPL tokens)
 
 ### Infrastructure
+
 - **PWA**: Service Worker, Web App Manifest
 - **Deployment**: Docker-ready
 - **CI/CD**: GitHub Actions ready
@@ -173,17 +183,20 @@ trustbridge/
 Before you begin, ensure you have the following installed:
 
 ### Required
+
 - **Node.js** 18+ and npm/yarn
 - **Python** 3.12+
 - **PostgreSQL** 14+
 - **Git**
 
 ### Optional (for blockchain features)
+
 - **Rust** 1.70+ (for Solana programs)
 - **Solana CLI** 1.16+ (for blockchain deployment)
 - **Anchor** 0.28+ (for Solana program development)
 
 ### Recommended Tools
+
 - **Docker** (for containerized deployment)
 - **Postman** or **Insomnia** (for API testing)
 - **VS Code** (with recommended extensions)
@@ -268,12 +281,12 @@ SOLANA_RPC_URL=https://api.devnet.solana.com
 
 # AI Service (Optional)
 OPENAI_API_KEY=your-openai-api-key
+# AI Service (Mistral AI)
+MISTRAL_API_KEY=your-mistral-api-key
 
-# Job Search APIs (Optional)
-ADZUNA_APP_ID=your-adzuna-app-id
-ADZUNA_APP_KEY=your-adzuna-app-key
-JOOBLE_API_KEY=your-jooble-api-key
-SERPAPI_KEY=your-serpapi-key
+# Job Search - No API keys needed!
+# RemoteOK: Free public API
+# Freelancer.com: OAuth (to be implemented)
 ```
 
 ### Frontend Configuration
@@ -313,6 +326,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Backend will be available at: `http://localhost:8000`
+
 - API Documentation: `http://localhost:8000/docs`
 - Alternative docs: `http://localhost:8000/redoc`
 
@@ -377,12 +391,14 @@ python scripts/seed_jobs.py
 ### Sample Data
 
 The seed scripts create:
+
 - Sample users (job seekers, startups, investors)
 - Sample startups with verification
 - 364+ job listings
 - Sample investments
 
 **Default Login Credentials:**
+
 - Job Seeker: `alice@example.com` / `password123`
 - Startup Founder: `david@startup.com` / `password123`
 - Investor: `frank@investor.com` / `password123`
@@ -439,12 +455,14 @@ Authorization: Bearer <your-jwt-token>
 ### Key Endpoints
 
 #### User Management
+
 - `POST /api/users/register` - Register new user
 - `POST /api/users/login` - User login
 - `GET /api/users/{user_id}` - Get user details
 - `DELETE /api/users/{user_id}` - Delete user
 
 #### CV Builder
+
 - `POST /api/cv/generate` - Generate CV with AI
 - `POST /api/cv/save` - Save CV to database
 - `GET /api/cv/{user_id}` - Get user's CV
@@ -453,11 +471,13 @@ Authorization: Bearer <your-jwt-token>
 - `POST /api/cv/ats-score` - Calculate ATS score
 
 #### Job Matching
+
 - `POST /api/jobs/match` - Match user to jobs
 - `GET /api/jobs/search-global` - Global job search
 - `POST /api/jobs/apply` - Apply to job
 
 #### Investment Platform
+
 - `POST /api/startups/register` - Register startup
 - `GET /api/startups/list` - List verified startups
 - `POST /api/startups/{id}/invest` - Make investment
@@ -529,6 +549,7 @@ docker-compose up -d
 ### Environment Variables
 
 Ensure all environment variables are set in production:
+
 - Database connection strings
 - JWT secret keys (use strong, unique keys)
 - API keys for external services
@@ -590,11 +611,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 💬 Support
 
 ### Documentation
+
 - [API Documentation](docs/API_SPEC.md)
 - [Architecture Overview](docs/ARCHITECTURE.md)
 - [Pitch Deck](PITCH_DECK.md)
 
 ### Getting Help
+
 - **Issues**: [GitHub Issues](https://github.com/yourusername/trustbridge/issues)
 - **Email**: support@trustbridge.com
 - **Discord**: [Join our community](https://discord.gg/trustbridge)
@@ -602,6 +625,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Reporting Bugs
 
 Please use the GitHub issue tracker to report bugs. Include:
+
 - Description of the bug
 - Steps to reproduce
 - Expected behavior
@@ -614,6 +638,7 @@ Please use the GitHub issue tracker to report bugs. Include:
 ## 🗺️ Roadmap
 
 ### Phase 1: Foundation ✅
+
 - [x] Core platform development
 - [x] CV builder with AI
 - [x] Job matching engine
@@ -621,18 +646,21 @@ Please use the GitHub issue tracker to report bugs. Include:
 - [x] PWA implementation
 
 ### Phase 2: Launch (Q1 2024)
+
 - [ ] Beta testing
 - [ ] University partnerships
 - [ ] Mobile app development
 - [ ] Enhanced AI features
 
 ### Phase 3: Growth (Q2-Q3 2024)
+
 - [ ] Market expansion
 - [ ] Premium features
 - [ ] Corporate partnerships
 - [ ] API marketplace
 
 ### Phase 4: Scale (Q4 2024+)
+
 - [ ] Multi-language support
 - [ ] Advanced analytics
 - [ ] Enterprise solutions
@@ -665,4 +693,3 @@ Please use the GitHub issue tracker to report bugs. Include:
 [Website](https://trustbridge.com) • [Twitter](https://twitter.com/trustbridge) • [LinkedIn](https://linkedin.com/company/trustbridge)
 
 </div>
-

@@ -457,6 +457,120 @@ async def get_field_suggestions(request: Dict[str, Any]):
         )
 
 
+@router.post("/api/cv/upload-linkedin-pdf")
+async def upload_linkedin_pdf(
+    pdf_file: UploadFile = File(...),
+    user_id: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload LinkedIn CV PDF and automatically extract information using AI.
+    Returns structured CV data ready for job matching.
+    """
+    try:
+        # Validate file type
+        if not pdf_file.filename.lower().endswith('.pdf'):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only PDF files are allowed"
+            )
+        
+        # Validate file size (10MB max)
+        content = await pdf_file.read()
+        await pdf_file.seek(0)  # Reset file pointer
+        
+        max_size = 10 * 1024 * 1024  # 10MB
+        if len(content) > max_size:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File size exceeds maximum of 10MB"
+            )
+        
+        # Import PDF parser service
+        from app.services.pdf_parser_service import PDFParserService
+        pdf_parser = PDFParserService()
+        
+        # Extract text from PDF
+        logger.info(f"Extracting text from PDF for user {user_id}")
+        pdf_text = await pdf_parser.extract_text_from_pdf(pdf_file)
+        
+        if not pdf_text or len(pdf_text) < 50:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Could not extract sufficient text from PDF. Please ensure the PDF is not scanned or encrypted."
+            )
+        
+        # Parse CV data using Mistral AI
+        logger.info(f"Parsing CV data with AI for user {user_id}")
+        cv_data = await pdf_parser.parse_linkedin_cv(pdf_text)
+        
+        # Validate and clean data
+        cv_data = pdf_parser.validate_cv_data(cv_data)
+        
+        # Save CV to database
+        logger.info(f"Saving parsed CV to database for user {user_id}")
+        result = cv_generator.generate_cv(
+            user_id=user_id,
+            personal_info=cv_data.get("personal_info", {}),
+            experience=cv_data.get("experience", []),
+            education=cv_data.get("education", []),
+            skills=cv_data.get("skills", {}),
+            awards=cv_data.get("awards", []),
+            publications=cv_data.get("publications", []),
+            projects=cv_data.get("projects", []),
+            memberships=[],
+            job_id=None,
+            photo_url=None,
+            db=db
+        )
+        
+        # Get job matches automatically
+        logger.info(f"Finding job matches for user {user_id}")
+        job_matches = []
+        try:
+            # Extract keywords from CV
+            keywords = []
+            if cv_data.get("skills", {}).get("technical"):
+                keywords.extend(cv_data["skills"]["technical"][:5])
+            if cv_data.get("experience"):
+                for exp in cv_data["experience"][:2]:
+                    if exp.get("job_title"):
+                        keywords.append(exp["job_title"])
+            
+            # Search for matching jobs
+            if keywords:
+                job_search_result = await search_jobs_from_cv(
+                    JobSearchRequest(
+                        keywords=keywords[:5],
+                        job_titles=[exp.get("job_title") for exp in cv_data.get("experience", [])[:3] if exp.get("job_title")],
+                        location=cv_data.get("personal_info", {}).get("address"),
+                        limit=10
+                    ),
+                    db=db
+                )
+                job_matches = job_search_result.get("jobs", [])
+        except Exception as e:
+            logger.warning(f"Could not fetch job matches: {e}")
+        
+        return {
+            "success": True,
+            "message": "CV uploaded and parsed successfully",
+            "cv_data": cv_data,
+            "cv_id": result.get("id"),
+            "job_matches": job_matches,
+            "match_count": len(job_matches)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading LinkedIn PDF: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to process PDF: {str(e)}"
+        )
+
+
 # ==================== GLOBAL JOB MATCHING ENDPOINTS ====================
 
 @router.get("/api/jobs/search-global")

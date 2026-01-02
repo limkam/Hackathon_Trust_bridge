@@ -9,7 +9,7 @@ class AIService:
     """Advanced AI service for CV generation with market analysis, ATS optimization, and job tailoring."""
     
     def __init__(self):
-        self.openai_key = settings.OPENAI_API_KEY
+        self.mistral_key = settings.MISTRAL_API_KEY or settings.OPENAI_API_KEY  # Backward compatibility
         # Industry keywords for market analysis
         self.industry_keywords = {
             "Technology": ["software development", "cloud computing", "agile", "devops", "api", "microservices"],
@@ -270,11 +270,11 @@ class AIService:
         if not text:
             return text
         
-        # Try OpenAI API if key is available
-        if self.openai_key:
+        # Try Mistral AI API if key is available
+        if self.mistral_key:
             try:
-                import openai
-                client = openai.OpenAI(api_key=self.openai_key)
+                from mistralai import Mistral
+                client = Mistral(api_key=self.mistral_key)
                 
                 prompt = f"""Rewrite the following CV {section} description to be more professional, impactful, and ATS-friendly. 
 Use strong action verbs, quantify achievements where possible, and maintain a professional tone.
@@ -285,8 +285,8 @@ Original text:
 
 Enhanced version (only return the enhanced text, no explanations):"""
                 
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                response = client.chat.complete(
+                    model="mistral-small-latest",
                     messages=[
                         {"role": "system", "content": "You are a professional CV writing assistant. Rewrite text to be more impactful and professional."},
                         {"role": "user", "content": prompt}
@@ -297,12 +297,12 @@ Enhanced version (only return the enhanced text, no explanations):"""
                 
                 enhanced = response.choices[0].message.content.strip()
                 if enhanced:
-                    logger.info(f"AI-enhanced text for {section} section")
+                    logger.info(f"AI-enhanced text for {section} section (Mistral AI)")
                     return enhanced
             except ImportError:
-                logger.warning("OpenAI library not installed, using rule-based enhancement")
+                logger.warning("Mistral AI library not installed, using rule-based enhancement")
             except Exception as e:
-                logger.error(f"OpenAI API error: {str(e)}, falling back to rule-based enhancement")
+                logger.error(f"Mistral AI API error: {str(e)}, falling back to rule-based enhancement")
         
         # Fallback to rule-based enhancement
         weak_verbs = {
@@ -885,11 +885,11 @@ Enhanced version (only return the enhanced text, no explanations):"""
         if not current_text or len(current_text) < 10:
             return suggestions
         
-        # Try OpenAI API if key is available and text is substantial
-        if self.openai_key and len(current_text) > 20:
+        # Try Mistral AI API if key is available and text is substantial
+        if self.mistral_key and len(current_text) > 20:
             try:
-                import openai
-                client = openai.OpenAI(api_key=self.openai_key)
+                from mistralai import Mistral
+                client = Mistral(api_key=self.mistral_key)
                 
                 prompt = f"""Analyze this CV {section} text and provide specific suggestions:
 1. Identify weak phrases that should be replaced with stronger alternatives
@@ -904,8 +904,8 @@ Respond in JSON format:
     "recommendations": ["specific recommendation 1", "specific recommendation 2"]
 }}"""
                 
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                response = client.chat.complete(
+                    model="mistral-small-latest",
                     messages=[
                         {"role": "system", "content": "You are a professional CV writing assistant. Provide specific, actionable suggestions in JSON format."},
                         {"role": "user", "content": prompt}
@@ -927,14 +927,14 @@ Respond in JSON format:
                     ai_suggestions = json.loads(content)
                     suggestions["improvements"] = ai_suggestions.get("improvements", [])
                     suggestions["recommendations"] = ai_suggestions.get("recommendations", [])
-                    logger.info(f"AI-generated suggestions for {section} section")
+                    logger.info(f"AI-generated suggestions for {section} section (Mistral AI)")
                 except json.JSONDecodeError:
                     logger.warning(f"Failed to parse AI response as JSON: {content[:100]}")
                     # Fall through to rule-based suggestions
             except ImportError:
-                logger.warning("OpenAI library not installed, using rule-based suggestions")
+                logger.warning("Mistral AI library not installed, using rule-based suggestions")
             except Exception as e:
-                logger.error(f"OpenAI API error: {str(e)}, falling back to rule-based suggestions")
+                logger.error(f"Mistral AI API error: {str(e)}, falling back to rule-based suggestions")
         
         # Fallback to rule-based analysis
         text_lower = current_text.lower()

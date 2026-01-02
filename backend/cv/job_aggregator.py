@@ -1,11 +1,10 @@
 """
 Job Aggregator Service
-Fetches jobs from multiple free APIs: Adzuna, Jooble, SerpAPI, and RSS feeds
+Fetches jobs from RemoteOK and Freelancer.com
 """
 import requests
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-import feedparser
 import sys
 from pathlib import Path
 
@@ -16,27 +15,15 @@ sys.path.insert(0, str(app_dir))
 
 from utils.logger import logger
 from core.config import settings
-import re
 
 
 class JobAggregator:
-    """Aggregates jobs from multiple free sources."""
+    """Aggregates jobs from RemoteOK and Freelancer.com."""
 
     def __init__(self):
-        # API keys from settings (automatically loads from .env)
-        self.adzuna_app_id = settings.ADZUNA_APP_ID
-        self.adzuna_app_key = settings.ADZUNA_APP_KEY
-        self.jooble_api_key = settings.JOOBLE_API_KEY
-        self.serpapi_key = settings.SERPAPI_KEY
-        
-        # Adzuna base URL (free tier available)
-        self.adzuna_base_url = "https://api.adzuna.com/v1/api/jobs"
-        
-        # Jooble base URL
-        self.jooble_base_url = "https://jooble.org/api"
-        
-        # SerpAPI base URL
-        self.serpapi_base_url = "https://serpapi.com/search"
+        # No API keys needed for RemoteOK (free public API)
+        # Freelancer.com will need OAuth in the future
+        pass
 
     def search_jobs(
         self,
@@ -46,12 +33,12 @@ class JobAggregator:
         limit: int = 50
     ) -> List[Dict[str, Any]]:
         """
-        Search jobs from all sources and return normalized results.
+        Search jobs from RemoteOK and Freelancer.com.
         
         Args:
             keywords: List of keywords from CV
             job_titles: Optional list of suggested job titles
-            location: Optional location filter
+            location: Optional location filter (ignored for remote jobs)
             limit: Maximum number of results
             
         Returns:
@@ -69,30 +56,23 @@ class JobAggregator:
         # Remove duplicates and create search query
         search_query = " ".join(list(set(search_terms))[:5])  # Limit to 5 terms
         
-        # Search APIs with timeout protection - use try/except for each to prevent hanging
+        # Search RemoteOK
         try:
-            adzuna_jobs = self._search_adzuna(search_query, location, limit // 4)
-            all_jobs.extend(adzuna_jobs)
+            logger.info("Searching RemoteOK...")
+            remoteok_jobs = self._search_remoteok(search_query, limit)
+            all_jobs.extend(remoteok_jobs)
+            logger.info(f"Found {len(remoteok_jobs)} jobs from RemoteOK")
         except Exception as e:
-            logger.warning(f"Adzuna search failed: {str(e)}")
+            logger.warning(f"RemoteOK search failed: {str(e)}")
         
+        # Search Freelancer.com (placeholder for now)
         try:
-            jooble_jobs = self._search_jooble(search_query, location, limit // 4)
-            all_jobs.extend(jooble_jobs)
+            logger.info("Searching Freelancer.com...")
+            freelancer_jobs = self._search_freelancer(search_query, limit // 2)
+            all_jobs.extend(freelancer_jobs)
+            logger.info(f"Found {len(freelancer_jobs)} jobs from Freelancer.com")
         except Exception as e:
-            logger.warning(f"Jooble search failed: {str(e)}")
-        
-        try:
-            serpapi_jobs = self._search_serpapi(search_query, location, limit // 4)
-            all_jobs.extend(serpapi_jobs)
-        except Exception as e:
-            logger.warning(f"SerpAPI search failed: {str(e)}")
-        
-        try:
-            rss_jobs = self._search_rss_feeds(search_query, limit // 4)
-            all_jobs.extend(rss_jobs)
-        except Exception as e:
-            logger.warning(f"RSS feed search failed: {str(e)}")
+            logger.warning(f"Freelancer.com search failed: {str(e)}")
         
         # Deduplicate and normalize
         normalized_jobs = self._deduplicate_jobs(all_jobs)
@@ -100,200 +80,104 @@ class JobAggregator:
         # Rank by relevance
         ranked_jobs = self._rank_by_relevance(normalized_jobs, keywords, job_titles)
         
+        logger.info(f"Total unique jobs found: {len(ranked_jobs)}")
         return ranked_jobs[:limit]
 
-    def _search_adzuna(
+    def _search_remoteok(
         self,
         query: str,
-        location: Optional[str] = None,
-        limit: int = 20
+        limit: int = 50
     ) -> List[Dict[str, Any]]:
-        """Search Adzuna API (free tier available)."""
-        if not self.adzuna_app_id or not self.adzuna_app_key:
-            logger.warning("Adzuna API keys not configured")
-            return []
-        
+        """
+        Search RemoteOK API for remote jobs.
+        Free public API - no authentication required.
+        """
         try:
-            params = {
-                "app_id": self.adzuna_app_id,
-                "app_key": self.adzuna_app_key,
-                "results_per_page": min(limit, 50),
-                "what": query,
-                "content-type": "application/json"
-            }
+            url = "https://remoteok.com/api"
             
-            if location:
-                params["where"] = location
-            
-            # Try first country only to avoid hanging (was trying multiple countries)
-            country = "us"  # Default to US
-            params["where0"] = country
-            response = requests.get(
-                f"{self.adzuna_base_url}/{country}/search/1",
-                params=params,
-                timeout=5  # Reduced timeout
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                jobs = []
-                for result in data.get("results", [])[:limit]:
-                    jobs.append({
-                        "title": result.get("title", ""),
-                        "company": result.get("company", {}).get("display_name", "Unknown"),
-                        "location": result.get("location", {}).get("display_name", location or "Remote"),
-                        "description": result.get("description", ""),
-                        "applyUrl": result.get("redirect_url", ""),
-                        "source": "Adzuna",
-                        "posted_date": result.get("created", "")
-                    })
-                return jobs
-        except Exception as e:
-            logger.error(f"Adzuna API error: {str(e)}")
-        
-        return []
-
-    def _search_jooble(
-        self,
-        query: str,
-        location: Optional[str] = None,
-        limit: int = 20
-    ) -> List[Dict[str, Any]]:
-        """Search Jooble API."""
-        if not self.jooble_api_key:
-            logger.warning("Jooble API key not configured")
-            return []
-        
-        try:
             headers = {
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "keywords": query,
-                "location": location or "",
-                "radius": "25",
-                "page": 1,
-                "searchMode": 1
+                "User-Agent": "TrustBridge-JobMatcher/1.0"
             }
             
-            response = requests.post(
-                f"{self.jooble_base_url}/{self.jooble_api_key}",
-                json=payload,
-                headers=headers,
-                timeout=5  # Reduced timeout
-            )
+            response = requests.get(url, headers=headers, timeout=10)
             
-            if response.status_code == 200:
-                data = response.json()
-                jobs = []
-                for result in data.get("jobs", [])[:limit]:
-                    jobs.append({
-                        "title": result.get("title", ""),
-                        "company": result.get("company", "Unknown"),
-                        "location": result.get("location", location or "Remote"),
-                        "description": result.get("snippet", ""),
-                        "applyUrl": result.get("link", ""),
-                        "source": "Jooble",
-                        "posted_date": result.get("updated", "")
-                    })
-                return jobs
+            if response.status_code != 200:
+                logger.error(f"RemoteOK API error: {response.status_code}")
+                return []
+            
+            data = response.json()
+            
+            # First item is metadata, skip it
+            if data and isinstance(data, list) and len(data) > 1:
+                jobs_data = data[1:]
+            else:
+                return []
+            
+            # Filter and format jobs
+            jobs = []
+            query_lower = query.lower()
+            query_words = query_lower.split()
+            
+            for job in jobs_data[:limit * 3]:
+                # Filter by query - flexible matching
+                title = job.get("position", "").lower()
+                tags = [tag.lower() for tag in job.get("tags", [])]
+                description = job.get("description", "").lower()
+                
+                # Match scoring
+                match_score = 0
+                for word in query_words:
+                    if len(word) < 3:
+                        continue
+                    if word in title:
+                        match_score += 3
+                    if any(word in tag for tag in tags):
+                        match_score += 2
+                    if word in description[:500]:
+                        match_score += 1
+                
+                if match_score > 0:
+                    formatted_job = {
+                        "title": job.get("position", ""),
+                        "company": job.get("company", "Unknown"),
+                        "location": "Remote",
+                        "description": job.get("description", "")[:500] + "..." if len(job.get("description", "")) > 500 else job.get("description", ""),
+                        "applyUrl": job.get("url", ""),
+                        "source": "RemoteOK",
+                        "posted_date": job.get("date", ""),
+                        "tags": job.get("tags", []),
+                        "logo": job.get("logo", ""),
+                        "match_score": match_score
+                    }
+                    jobs.append(formatted_job)
+            
+            # Sort by match score
+            jobs.sort(key=lambda x: x.get("match_score", 0), reverse=True)
+            
+            return jobs[:limit]
+            
         except Exception as e:
-            logger.error(f"Jooble API error: {str(e)}")
-        
-        return []
-
-    def _search_serpapi(
-        self,
-        query: str,
-        location: Optional[str] = None,
-        limit: int = 20
-    ) -> List[Dict[str, Any]]:
-        """Search SerpAPI (Google Jobs)."""
-        if not self.serpapi_key:
-            logger.warning("SerpAPI key not configured")
+            logger.error(f"RemoteOK API error: {str(e)}")
             return []
-        
-        try:
-            params = {
-                "api_key": self.serpapi_key,
-                "engine": "google_jobs",
-                "q": query,
-                "location": location or "United States",
-                "num": min(limit, 100)
-            }
-            
-            response = requests.get(
-                self.serpapi_base_url,
-                params=params,
-                timeout=5  # Reduced timeout
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                jobs = []
-                for result in data.get("jobs_results", [])[:limit]:
-                    jobs.append({
-                        "title": result.get("title", ""),
-                        "company": result.get("company_name", "Unknown"),
-                        "location": result.get("location", location or "Remote"),
-                        "description": result.get("description", ""),
-                        "applyUrl": result.get("apply_options", [{}])[0].get("link", "") if result.get("apply_options") else "",
-                        "source": "Google Jobs",
-                        "posted_date": result.get("detected_extensions", {}).get("posted_at", "")
-                    })
-                return jobs
-        except Exception as e:
-            logger.error(f"SerpAPI error: {str(e)}")
-        
-        return []
 
-    def _search_rss_feeds(
+    def _search_freelancer(
         self,
         query: str,
         limit: int = 20
     ) -> List[Dict[str, Any]]:
-        """Search remote/freelance job RSS feeds."""
-        jobs = []
-        
-        # Free RSS feed sources
-        rss_feeds = [
-            "https://www.remoteok.io/remote-jobs.rss",
-            "https://weworkremotely.com/categories/remote-programming-jobs.rss",
-            "https://www.flexjobs.com/rss/jobs.rss",
-        ]
-        
-        for feed_url in rss_feeds:
-            try:
-                feed = feedparser.parse(feed_url)
-                for entry in feed.entries[:limit // len(rss_feeds)]:
-                    # Check if entry matches keywords
-                    title_lower = entry.get("title", "").lower()
-                    description_lower = entry.get("summary", "").lower()
-                    query_lower = query.lower()
-                    
-                    if any(keyword.lower() in title_lower or keyword.lower() in description_lower 
-                           for keyword in query.split()):
-                        jobs.append({
-                            "title": entry.get("title", ""),
-                            "company": self._extract_company_from_rss(entry),
-                            "location": "Remote",
-                            "description": entry.get("summary", "")[:500],  # Limit description
-                            "applyUrl": entry.get("link", ""),
-                            "source": "RSS Feed",
-                            "posted_date": entry.get("published", "")
-                        })
-            except Exception as e:
-                logger.error(f"RSS feed error ({feed_url}): {str(e)}")
-        
-        return jobs
-
-    def _extract_company_from_rss(self, entry: Dict) -> str:
-        """Extract company name from RSS entry."""
-        title = entry.get("title", "")
-        # Try to extract company from title (format: "Job Title - Company Name")
-        if " - " in title:
-            return title.split(" - ")[-1]
-        return "Unknown"
+        """
+        Search Freelancer.com for freelance projects.
+        Placeholder - requires OAuth for full implementation.
+        """
+        try:
+            logger.info("Freelancer.com requires OAuth - placeholder for now")
+            # TODO: Implement Freelancer API OAuth flow
+            # For now, return empty array
+            return []
+            
+        except Exception as e:
+            logger.error(f"Freelancer.com API error: {str(e)}")
+            return []
 
     def _deduplicate_jobs(self, jobs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Remove duplicate jobs based on title and company."""
@@ -324,7 +208,7 @@ class JobAggregator:
         titles_lower = [t.lower() for t in job_titles] if job_titles else []
         
         def calculate_score(job: Dict[str, Any]) -> float:
-            score = 0.0
+            score = job.get("match_score", 0.0)  # Start with existing match score
             title = job.get("title", "").lower()
             description = job.get("description", "").lower()
             company = job.get("company", "").lower()
@@ -345,7 +229,7 @@ class JobAggregator:
                 if any(word in title for word in job_title.split()):
                     score += 2.0
             
-            # Boost remote jobs
+            # Boost remote jobs (already all remote from RemoteOK)
             if "remote" in title.lower() or "remote" in description.lower():
                 score += 1.0
             
@@ -356,4 +240,3 @@ class JobAggregator:
         scored_jobs.sort(key=lambda x: x[1], reverse=True)
         
         return [job for job, score in scored_jobs]
-

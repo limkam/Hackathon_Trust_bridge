@@ -17,6 +17,7 @@ import ATSOptimizer from "../components/cv-builder/ATSOptimizer";
 import CVExporter from "../components/cv-builder/CVExporter";
 import JobApplicationTracker from "../components/cv-builder/JobApplicationTracker";
 import CVPreview from "../cv-builder/CVPreview";
+import QuickUpload from "../components/cv-builder/QuickUpload";
 import toast from "react-hot-toast";
 import { 
   FileText, Search, MessageSquare, FileCheck, 
@@ -77,6 +78,7 @@ function extractJobTitlesFromCV(cvData) {
 
 // Sidebar menu items
 const SIDEBAR_ITEMS = [
+  { id: "quick-upload", label: "Quick Upload", icon: Upload, alwaysVisible: true },
   { id: "wizard", label: "Create CV", icon: UserPlus, alwaysVisible: true },
   { id: "editor", label: "Edit CV", icon: FileText, requiresCV: true },
   { id: "cover-letter", label: "Cover Letter", icon: MessageSquare, requiresCV: false },
@@ -183,10 +185,26 @@ export default function CVBuilderPage() {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case "quick-upload":
+        return (
+          <QuickUpload
+            onComplete={(result) => {
+              // After successful upload, fetch the CV and redirect to job matches
+              fetchCV();
+              toast.success("CV created! Showing job matches...");
+              setActiveTab("editor");
+            }}
+            onCancel={() => {
+              setActiveTab("wizard");
+            }}
+          />
+        );
+
       case "wizard":
         return (
           <EuropassCVWizard
             onComplete={handleWizardComplete}
+            key="europass-cv-wizard-stable"
             onCancel={() => {
               if (hasCV) {
                 setActiveTab("editor");

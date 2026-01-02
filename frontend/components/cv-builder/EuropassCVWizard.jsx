@@ -31,9 +31,10 @@ export default function EuropassCVWizard({ onComplete, onCancel }) {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const debounceTimerRef = useRef({});
+  const initializedRef = useRef(false); // Track if we've initialized the form
 
-  // Initialize cvData state first
-  const [cvData, setCvData] = useState({
+  // Initialize cvData state - use a function to ensure it only runs once
+  const [cvData, setCvData] = useState(() => ({
     personal_info: {
       first_name: user?.full_name?.split(" ")[0] || "",
       surname: user?.full_name?.split(" ").slice(1).join(" ") || "",
@@ -58,7 +59,7 @@ export default function EuropassCVWizard({ onComplete, onCancel }) {
       publications: [],
       portfolio_links: "",
     }
-  });
+  }));
 
   // Cleanup debounce timers on unmount
   useEffect(() => {

@@ -23,14 +23,13 @@ class Settings(BaseSettings):
     # Blockchain Scripts Path
     BLOCKCHAIN_SCRIPTS_PATH: str = "../blockchain/scripts"
     
-    # AI Service (Optional)
-    OPENAI_API_KEY: Optional[str] = None
+    # AI Service
+    OPENAI_API_KEY: Optional[str] = None  # Deprecated - use MISTRAL_API_KEY
+    MISTRAL_API_KEY: Optional[str] = None
     
-    # Job Search API Keys (Optional)
-    ADZUNA_APP_ID: Optional[str] = None
-    ADZUNA_APP_KEY: Optional[str] = None
-    JOOBLE_API_KEY: Optional[str] = None
-    SERPAPI_KEY: Optional[str] = None
+    # Job Search APIs
+    # RemoteOK: Free public API - no key needed!
+    # Freelancer.com: OAuth required (to be implemented)
     
     # App
     APP_NAME: str = "TrustBridge API"

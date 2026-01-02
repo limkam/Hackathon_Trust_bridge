@@ -40,50 +40,204 @@ class GlobalJobAPI:
         
         all_jobs = []
         
-        # Search LinkedIn Jobs (if API key available)
-        if self.linkedin_api_key:
-            linkedin_jobs = self._search_linkedin(query, location, limit // 3)
-            all_jobs.extend(linkedin_jobs)
+        # Search RemoteOK (free public API - no key needed!)
+        logger.info("Searching RemoteOK for remote opportunities...")
+        remoteok_jobs = self._search_remoteok(query, location, limit)
+        all_jobs.extend(remoteok_jobs)
         
-        # Search Indeed Jobs (if API key available)
-        if self.indeed_api_key:
-            indeed_jobs = self._search_indeed(query, location, limit // 3)
-            all_jobs.extend(indeed_jobs)
+        # Search Freelancer.com (for freelance/gig work)
+        logger.info("Searching Freelancer.com for freelance projects...")
+        freelancer_jobs = self._search_freelancer(query, location, limit // 2)
+        all_jobs.extend(freelancer_jobs)
         
-        # Search Talent.com Jobs (if API key available)
-        if self.talent_api_key:
-            talent_jobs = self._search_talent(query, location, limit // 3)
-            all_jobs.extend(talent_jobs)
-        
-        # If no API keys, return mock data for development
+        # If no jobs found, return mock data for development
         if not all_jobs:
-            logger.warning("No job API keys configured, returning mock data")
+            logger.warning("No jobs found from APIs, returning mock data")
             all_jobs = self._get_mock_jobs(query, location, limit)
         
         # Remove duplicates and sort by relevance
         unique_jobs = self._deduplicate_jobs(all_jobs)
         
+        logger.info(f"Total jobs found: {len(unique_jobs)}")
         return unique_jobs[:limit]
     
-    def _search_linkedin(self, query: str, location: Optional[str], limit: int) -> List[Dict[str, Any]]:
-        """Search LinkedIn Jobs API."""
-        # TODO: Implement LinkedIn Jobs API integration
-        # LinkedIn Jobs API requires OAuth and specific endpoints
-        logger.info("LinkedIn Jobs API not yet implemented")
-        return []
     
-    def _search_indeed(self, query: str, location: Optional[str], limit: int) -> List[Dict[str, Any]]:
-        """Search Indeed Jobs API."""
-        # TODO: Implement Indeed Jobs API integration
-        # Indeed has a Partner API that requires registration
-        logger.info("Indeed Jobs API not yet implemented")
-        return []
+    def _search_remoteok(self, query: str, location: Optional[str], limit: int) -> List[Dict[str, Any]]:
+        """
+        Search RemoteOK API for remote jobs.
+        RemoteOK has a free public API: https://remoteok.com/api
+        """
+        try:
+            logger.info(f"Searching RemoteOK for: {query}")
+            
+            # RemoteOK API endpoint
+            url = "https://remoteok.com/api"
+            
+            headers = {
+                "User-Agent": "TrustBridge-JobMatcher/1.0"
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            
+            if response.status_code != 200:
+                logger.error(f"RemoteOK API error: {response.status_code}")
+                return []
+            
+            data = response.json()
+            
+            # First item is metadata, skip it
+            if data and isinstance(data, list) and len(data) > 1:
+                jobs_data = data[1:]
+            else:
+                return []
+            
+            # Filter and format jobs
+            jobs = []
+            query_lower = query.lower()
+            query_words = query_lower.split()  # Split query into words
+            
+            for job in jobs_data[:limit * 3]:  # Get more for filtering
+                # Filter by query - more flexible matching
+                title = job.get("position", "").lower()
+                tags = [tag.lower() for tag in job.get("tags", [])]
+                company = job.get("company", "").lower()
+                description = job.get("description", "").lower()
+                
+                # Match if ANY query word is in title, tags, or description
+                match_score = 0
+                for word in query_words:
+                    if len(word) < 3:  # Skip short words
+                        continue
+                    if word in title:
+                        match_score += 3  # Title match is most important
+                    if any(word in tag for tag in tags):
+                        match_score += 2  # Tag match is important
+                    if word in description[:500]:  # Check first 500 chars of description
+                        match_score += 1
+                
+                # Include job if it has any matches
+                if match_score > 0:
+                    formatted_job = {
+                        "id": job.get("id", ""),
+                        "title": job.get("position", ""),
+                        "company": job.get("company", ""),
+                        "location": "Remote",  # RemoteOK is all remote
+                        "description": job.get("description", "")[:500] + "..." if len(job.get("description", "")) > 500 else job.get("description", ""),
+                        "salary": job.get("salary_min", "") or "Competitive",
+                        "source": "RemoteOK",
+                        "url": job.get("url", ""),
+                        "posted_date": job.get("date", ""),
+                        "tags": job.get("tags", []),
+                        "logo": job.get("logo", ""),
+                        "match_score": match_score  # For sorting
+                    }
+                    jobs.append(formatted_job)
+            
+            # Sort by match score
+            jobs.sort(key=lambda x: x.get("match_score", 0), reverse=True)
+            
+            logger.info(f"Found {len(jobs)} jobs from RemoteOK")
+            return jobs[:limit]
+            
+        except Exception as e:
+            logger.error(f"RemoteOK API error: {str(e)}")
+            return []
     
-    def _search_talent(self, query: str, location: Optional[str], limit: int) -> List[Dict[str, Any]]:
-        """Search Talent.com Jobs API."""
-        # TODO: Implement Talent.com Jobs API integration
-        logger.info("Talent.com Jobs API not yet implemented")
-        return []
+    
+    def _search_freelancer(
+        self,
+        query: str,
+        location: Optional[str] = None,
+        limit: int = 20
+    ) -> List[Dict[str, Any]]:
+        """
+        Search Freelancer.com for freelance projects.
+        Uses Freelancer's public API endpoint.
+        """
+        try:
+            logger.info(f"Searching Freelancer.com for: {query}")
+            
+            # Freelancer API endpoint (public projects)
+            url = "https://www.freelancer.com/api/projects/0.1/projects/active/"
+            
+            headers = {
+                "User-Agent": "TrustBridge-JobMatcher/1.0"
+            }
+            
+            params = {
+                "query": query,
+                "limit": limit,
+                "compact": True  # Get compact response
+            }
+            
+            
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+            
+            if response.status_code != 200:
+                logger.error(f"Freelancer API error: {response.status_code}")
+                return []
+            
+            # Parse JSON response
+            try:
+                data = response.json()
+            except Exception as json_error:
+                logger.error(f"Failed to parse Freelancer JSON: {json_error}")
+                return []
+            
+            # Extract projects from response
+            if not data.get("result") or not data["result"].get("projects"):
+                logger.info("No projects found from Freelancer")
+                return []
+            
+            projects = data["result"]["projects"]
+            
+            # Format projects
+            jobs = []
+            for project in projects[:limit]:
+                try:
+                    # Format budget safely
+                    budget = project.get("budget", {})
+                    currency_data = project.get("currency", {})
+                    currency = currency_data.get("code", "USD") if isinstance(currency_data, dict) else "USD"
+                    
+                    min_budget = budget.get("minimum", 0) if isinstance(budget, dict) else 0
+                    max_budget = budget.get("maximum", "?") if isinstance(budget, dict) else "?"
+                    budget_str = f"{currency} {min_budget} - {max_budget}"
+                    
+                    # Extract tags from jobs
+                    tags = []
+                    if project.get("jobs") and isinstance(project["jobs"], list):
+                        tags = [job.get("name", "") for job in project["jobs"] if isinstance(job, dict)]
+                    
+                    # Format posted date
+                    posted_timestamp = project.get("submitdate", 0)
+                    from datetime import datetime
+                    posted_date = datetime.fromtimestamp(posted_timestamp).strftime("%Y-%m-%d") if posted_timestamp else ""
+                    
+                    formatted_job = {
+                        "id": str(project.get("id", "")),
+                        "title": project.get("title", "Untitled Project"),
+                        "company": "Freelancer Client",  # Freelancer hides client names
+                        "location": "Remote (Freelance)",
+                        "description": project.get("preview_description", project.get("description", ""))[:500],
+                        "salary": budget_str,
+                        "source": "Freelancer.com",
+                        "url": f"https://www.freelancer.com/projects/{project.get('seo_url', '')}",
+                        "posted_date": posted_date,
+                        "tags": tags,
+                        "type": project.get("type", {}).get("name", "Fixed Price") if isinstance(project.get("type"), dict) else "Fixed Price"
+                    }
+                    jobs.append(formatted_job)
+                except Exception as project_error:
+                    logger.warning(f"Error parsing Freelancer project: {project_error}")
+                    continue
+            
+            logger.info(f"Found {len(jobs)} projects from Freelancer.com")
+            return jobs
+            
+        except Exception as e:
+            logger.error(f"Freelancer.com API error: {str(e)}")
+            return []
     
     def _get_mock_jobs(self, query: str, location: Optional[str], limit: int) -> List[Dict[str, Any]]:
         """Return mock job data for development/testing."""
