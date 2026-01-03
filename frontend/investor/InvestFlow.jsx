@@ -21,7 +21,7 @@ export default function InvestFlow({ startupId, investorId, onSuccess }) {
 
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:8000/api/investments/usdc/send", {
+      const response = await fetch("http://localhost:8001/api/investments/usdc/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

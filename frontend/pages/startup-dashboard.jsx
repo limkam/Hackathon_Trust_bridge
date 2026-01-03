@@ -39,7 +39,7 @@ export default function StartupDashboard() {
     try {
       setLoading(true);
       // Fetch startup by founder/user ID
-      const response = await fetch(`http://localhost:8000/api/startups/by-founder/${user?.id}`);
+      const response = await fetch(`http://localhost:8001/api/startups/by-founder/${user?.id}`);
       if (response.ok) {
         const data = await response.json();
         setStartup(data);

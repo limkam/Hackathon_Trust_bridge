@@ -21,7 +21,7 @@ export default function JobMatches({ userId }) {
   const fetchJobMatches = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8000/api/jobs/match?user_id=${userId}&limit=10`);
+      const response = await fetch(`http://localhost:8001/api/jobs/match?user_id=${userId}&limit=10`);
       const data = await response.json();
       setMatches(data.matches || []);
     } catch (error) {
@@ -33,7 +33,7 @@ export default function JobMatches({ userId }) {
 
   const fetchGlobalJobs = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/jobs/search-global?query=software engineer&limit=10`);
+      const response = await fetch(`http://localhost:8001/api/jobs/search-global?query=software engineer&limit=10`);
       const data = await response.json();
       setGlobalJobs(data.jobs || []);
     } catch (error) {

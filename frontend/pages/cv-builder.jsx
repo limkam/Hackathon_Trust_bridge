@@ -21,7 +21,7 @@ import QuickUpload from "../components/cv-builder/QuickUpload";
 import toast from "react-hot-toast";
 import { 
   FileText, Search, MessageSquare, FileCheck, 
-  Download, UserPlus, Briefcase, Menu, X, Sparkles
+  Download, UserPlus, Briefcase, Menu, X, Sparkles, Upload
 } from "lucide-react";
 
 // Helper function to extract keywords from CV
@@ -118,7 +118,7 @@ export default function CVBuilderPage() {
   const fetchCV = async () => {
     if (!user?.id) return;
     try {
-      const response = await fetch(`http://localhost:8000/api/cv/${user.id}`);
+      const response = await fetch(`http://localhost:8001/api/cv/${user.id}`);
       if (response.ok) {
         const data = await response.json();
         setCvData(data);
@@ -162,7 +162,7 @@ export default function CVBuilderPage() {
 
   const handleWizardComplete = async (savedCv) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/cv/${user.id}`);
+      const response = await fetch(`http://localhost:8001/api/cv/${user.id}`);
       if (response.ok) {
         const fullCv = await response.json();
         setCvData(fullCv);
@@ -189,10 +189,9 @@ export default function CVBuilderPage() {
         return (
           <QuickUpload
             onComplete={(result) => {
-              // After successful upload, fetch the CV and redirect to job matches
               fetchCV();
-              toast.success("CV created! Showing job matches...");
-              setActiveTab("editor");
+              setActiveTab("job-match");
+              toast.success("CV saved! Showing job matches");
             }}
             onCancel={() => {
               setActiveTab("wizard");

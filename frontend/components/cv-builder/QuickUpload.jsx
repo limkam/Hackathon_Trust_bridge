@@ -85,11 +85,6 @@ export default function QuickUpload({ onComplete, onCancel }) {
         setExtractedData(result.cv_data);
         setJobMatches(result.job_matches || []);
         toast.success(`CV uploaded! Found ${result.match_count} job matches`);
-        
-        // Auto-complete after 3 seconds to show results
-        setTimeout(() => {
-          onComplete(result);
-        }, 3000);
       } else {
         throw new Error(result.message || "Upload failed");
       }

@@ -28,7 +28,7 @@ export default function CVEditor({ cvData, onSave, onUpdate }) {
     }
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:8000/api/cv/suggestions", {
+      const response = await fetch("http://localhost:8001/api/cv/suggestions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ section, content }),

@@ -22,7 +22,7 @@ export default function StartupDetails({ startupId }) {
   const fetchStartupDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8000/api/startups/${startupId}`);
+      const response = await fetch(`http://localhost:8001/api/startups/${startupId}`);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

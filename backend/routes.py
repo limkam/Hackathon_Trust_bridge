@@ -500,15 +500,13 @@ async def upload_linkedin_pdf(
                 detail="Could not extract sufficient text from PDF. Please ensure the PDF is not scanned or encrypted."
             )
         
-        # Parse CV data using Mistral AI
-        logger.info(f"Parsing CV data with AI for user {user_id}")
-        cv_data = await pdf_parser.parse_linkedin_cv(pdf_text)
         
-        # Validate and clean data
+        # Parse with Mistral AI
+        logger.info("Parsing CV with Mistral AI")
+        cv_data = await pdf_parser.parse_linkedin_cv(pdf_text)
         cv_data = pdf_parser.validate_cv_data(cv_data)
         
-        # Save CV to database
-        logger.info(f"Saving parsed CV to database for user {user_id}")
+        # Save to database
         result = cv_generator.generate_cv(
             user_id=user_id,
             personal_info=cv_data.get("personal_info", {}),
@@ -524,37 +522,38 @@ async def upload_linkedin_pdf(
             db=db
         )
         
-        # Get job matches automatically
-        logger.info(f"Finding job matches for user {user_id}")
+        # Job matching
         job_matches = []
         try:
-            # Extract keywords from CV
             keywords = []
-            if cv_data.get("skills", {}).get("technical"):
-                keywords.extend(cv_data["skills"]["technical"][:5])
-            if cv_data.get("experience"):
-                for exp in cv_data["experience"][:2]:
-                    if exp.get("job_title"):
-                        keywords.append(exp["job_title"])
+            skills_data = cv_data.get("skills", {})
             
-            # Search for matching jobs
+            if isinstance(skills_data, dict):
+                tech = skills_data.get("technical", [])
+                if isinstance(tech, list):
+                    keywords.extend([str(s) for s in tech[:3]])
+                elif isinstance(tech, str):
+                    keywords.append(tech)
+            
+            exp_list = cv_data.get("experience", [])
+            if exp_list and isinstance(exp_list, list):
+                for exp in exp_list[:2]:
+                    if isinstance(exp, dict):
+                        jt = exp.get("job_title")
+                        if jt:
+                            keywords.append(str(jt))
+            
             if keywords:
-                job_search_result = await search_jobs_from_cv(
-                    JobSearchRequest(
-                        keywords=keywords[:5],
-                        job_titles=[exp.get("job_title") for exp in cv_data.get("experience", [])[:3] if exp.get("job_title")],
-                        location=cv_data.get("personal_info", {}).get("address"),
-                        limit=10
-                    ),
-                    db=db
-                )
-                job_matches = job_search_result.get("jobs", [])
+                from cv.job_aggregator import JobAggregator
+                aggregator = JobAggregator()
+                job_matches = aggregator.search_jobs(keywords, limit=10)
+                logger.info(f"Found {len(job_matches)} jobs")
         except Exception as e:
-            logger.warning(f"Could not fetch job matches: {e}")
+            logger.error(f"Job matching error: {e}")
         
         return {
             "success": True,
-            "message": "CV uploaded and parsed successfully",
+            "message": "CV processed successfully",
             "cv_data": cv_data,
             "cv_id": result.get("id"),
             "job_matches": job_matches,

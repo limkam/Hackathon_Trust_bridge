@@ -144,7 +144,7 @@ export default function StartupOnboarding() {
       // First, update user's wallet address if it's different
       if (user && user.id && trimmedAddress !== user.wallet_address) {
         try {
-          const updateResponse = await fetch(`http://localhost:8000/api/users/${user.id}`, {
+          const updateResponse = await fetch(`http://localhost:8001/api/users/${user.id}`, {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
@@ -167,7 +167,7 @@ export default function StartupOnboarding() {
       }
 
       // Register startup
-      const response = await fetch("http://localhost:8000/api/startups/register", {
+      const response = await fetch("http://localhost:8001/api/startups/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

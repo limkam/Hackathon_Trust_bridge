@@ -23,7 +23,7 @@ export default function InterviewPrep({ cvData }) {
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/api/cv/generate-interview-questions", {
+      const response = await fetch("http://localhost:8001/api/cv/generate-interview-questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
