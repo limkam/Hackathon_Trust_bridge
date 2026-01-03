@@ -7,15 +7,13 @@ from sqlalchemy.orm import Session
 import sys
 from pathlib import Path
 
-# Add backend/app to path for imports
+# Add backend directory to path for imports
 backend_dir = Path(__file__).parent.parent
-app_dir = backend_dir / "app"
-sys.path.insert(0, str(app_dir))
+sys.path.insert(0, str(backend_dir))
 
-from services.ai_service import AIService
-from db.models import CV, User
-from utils.logger import logger
-import json
+from app.services.ai_service import AIService
+from app.db.models import CV, User
+from app.utils.logger import logger
 
 
 class CVGenerator:
@@ -115,9 +113,6 @@ class CVGenerator:
         if not user:
             raise ValueError(f"User {user_id} not found")
         
-        # Get user education data (from education list, not certificates)
-        cert_data = []  # Certificates removed - use education list instead
-        
         # Prepare user data
         user_data = {
             "full_name": personal_info.get("first_name", "") + " " + personal_info.get("surname", "") or user.full_name,
@@ -184,19 +179,236 @@ class CVGenerator:
     
     def export_to_pdf(self, cv_data: Dict[str, Any]) -> bytes:
         """
-        Export CV to PDF format.
-        TODO: Implement PDF generation using reportlab or weasyprint
+        Export CV to PDF format using reportlab.
         """
-        # Placeholder for PDF export
-        logger.info("Exporting CV to PDF")
-        raise NotImplementedError("PDF export not yet implemented")
+        try:
+            from reportlab.lib.pagesizes import letter
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import inch
+            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+            from reportlab.lib import colors
+            from io import BytesIO
+            
+            logger.info("Exporting CV to PDF")
+            
+            buffer = BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+            story = []
+            styles = getSampleStyleSheet()
+            
+            # Custom styles
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles['Heading1'],
+                fontSize=18,
+                textColor=colors.HexColor('#1a1a1a'),
+                spaceAfter=12,
+            )
+            
+            heading_style = ParagraphStyle(
+                'CustomHeading',
+                parent=styles['Heading2'],
+                fontSize=14,
+                textColor=colors.HexColor('#2c3e50'),
+                spaceAfter=6,
+                spaceBefore=12,
+            )
+            
+            # Personal Info
+            personal_info = cv_data.get("personal_info", {})
+            if personal_info:
+                name = personal_info.get("full_name", "CV")
+                email = personal_info.get("email", "")
+                phone = personal_info.get("phone", "")
+                address = personal_info.get("address", "")
+                
+                story.append(Paragraph(name, title_style))
+                contact_info = []
+                if email:
+                    contact_info.append(email)
+                if phone:
+                    contact_info.append(phone)
+                if address:
+                    contact_info.append(address)
+                if contact_info:
+                    story.append(Paragraph(" | ".join(contact_info), styles['Normal']))
+                story.append(Spacer(1, 0.2*inch))
+            
+            # Experience
+            experience = cv_data.get("experience", [])
+            if experience:
+                story.append(Paragraph("Experience", heading_style))
+                for exp in experience:
+                    title = exp.get("job_title", "")
+                    company = exp.get("company", "")
+                    period = exp.get("period", "")
+                    description = exp.get("description", "")
+                    
+                    exp_text = f"<b>{title}</b>"
+                    if company:
+                        exp_text += f" - {company}"
+                    if period:
+                        exp_text += f" ({period})"
+                    story.append(Paragraph(exp_text, styles['Normal']))
+                    if description:
+                        story.append(Paragraph(description, styles['Normal']))
+                    story.append(Spacer(1, 0.1*inch))
+            
+            # Education
+            education = cv_data.get("education", [])
+            if education:
+                story.append(Paragraph("Education", heading_style))
+                for edu in education:
+                    degree = edu.get("degree", "")
+                    institution = edu.get("institution", "")
+                    period = edu.get("period", "")
+                    
+                    edu_text = f"<b>{degree}</b>"
+                    if institution:
+                        edu_text += f" - {institution}"
+                    if period:
+                        edu_text += f" ({period})"
+                    story.append(Paragraph(edu_text, styles['Normal']))
+                    story.append(Spacer(1, 0.1*inch))
+            
+            # Skills
+            skills = cv_data.get("skills", {})
+            if skills:
+                story.append(Paragraph("Skills", heading_style))
+                skills_text = []
+                if isinstance(skills, dict):
+                    for category, skill_list in skills.items():
+                        if isinstance(skill_list, list):
+                            skills_text.append(f"{category}: {', '.join(skill_list)}")
+                        else:
+                            skills_text.append(f"{category}: {skill_list}")
+                else:
+                    skills_text.append(str(skills))
+                
+                if skills_text:
+                    story.append(Paragraph(" | ".join(skills_text), styles['Normal']))
+                    story.append(Spacer(1, 0.1*inch))
+            
+            # Build PDF
+            doc.build(story)
+            buffer.seek(0)
+            return buffer.getvalue()
+            
+        except ImportError:
+            logger.error("reportlab not installed. Install with: pip install reportlab")
+            raise NotImplementedError("PDF export requires reportlab. Install with: pip install reportlab")
+        except Exception as e:
+            logger.error(f"Error generating PDF: {str(e)}", exc_info=True)
+            raise
     
     def export_to_word(self, cv_data: Dict[str, Any]) -> bytes:
         """
-        Export CV to Word format.
-        TODO: Implement Word generation using python-docx
+        Export CV to Word format using python-docx.
         """
-        # Placeholder for Word export
-        logger.info("Exporting CV to Word")
-        raise NotImplementedError("Word export not yet implemented")
+        try:
+            from docx import Document
+            from docx.shared import Pt
+            from docx.enum.text import WD_ALIGN_PARAGRAPH
+            from io import BytesIO
+            
+            logger.info("Exporting CV to Word")
+            
+            doc = Document()
+            
+            # Set default font
+            style = doc.styles['Normal']
+            font = style.font
+            font.name = 'Calibri'
+            font.size = Pt(11)
+            
+            # Personal Info
+            personal_info = cv_data.get("personal_info", {})
+            if personal_info:
+                name = personal_info.get("full_name", "CV")
+                email = personal_info.get("email", "")
+                phone = personal_info.get("phone", "")
+                address = personal_info.get("address", "")
+                
+                # Name as title
+                title = doc.add_heading(name, 0)
+                title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                
+                # Contact info
+                contact_para = doc.add_paragraph()
+                contact_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                contact_info = []
+                if email:
+                    contact_info.append(email)
+                if phone:
+                    contact_info.append(phone)
+                if address:
+                    contact_info.append(address)
+                if contact_info:
+                    contact_para.add_run(" | ".join(contact_info))
+                
+                doc.add_paragraph()  # Spacing
+            
+            # Experience
+            experience = cv_data.get("experience", [])
+            if experience:
+                doc.add_heading('Experience', level=1)
+                for exp in experience:
+                    title = exp.get("job_title", "")
+                    company = exp.get("company", "")
+                    period = exp.get("period", "")
+                    description = exp.get("description", "")
+                    
+                    p = doc.add_paragraph()
+                    p.add_run(f"{title}").bold = True
+                    if company:
+                        p.add_run(f" - {company}")
+                    if period:
+                        p.add_run(f" ({period})")
+                    
+                    if description:
+                        doc.add_paragraph(description, style='List Bullet')
+            
+            # Education
+            education = cv_data.get("education", [])
+            if education:
+                doc.add_heading('Education', level=1)
+                for edu in education:
+                    degree = edu.get("degree", "")
+                    institution = edu.get("institution", "")
+                    period = edu.get("period", "")
+                    
+                    p = doc.add_paragraph()
+                    p.add_run(f"{degree}").bold = True
+                    if institution:
+                        p.add_run(f" - {institution}")
+                    if period:
+                        p.add_run(f" ({period})")
+            
+            # Skills
+            skills = cv_data.get("skills", {})
+            if skills:
+                doc.add_heading('Skills', level=1)
+                if isinstance(skills, dict):
+                    for category, skill_list in skills.items():
+                        p = doc.add_paragraph()
+                        p.add_run(f"{category}: ").bold = True
+                        if isinstance(skill_list, list):
+                            p.add_run(", ".join(skill_list))
+                        else:
+                            p.add_run(str(skill_list))
+                else:
+                    doc.add_paragraph(str(skills))
+            
+            # Save to bytes
+            buffer = BytesIO()
+            doc.save(buffer)
+            buffer.seek(0)
+            return buffer.getvalue()
+            
+        except ImportError:
+            logger.error("python-docx not installed. Install with: pip install python-docx")
+            raise NotImplementedError("Word export requires python-docx. Install with: pip install python-docx")
+        except Exception as e:
+            logger.error(f"Error generating Word document: {str(e)}", exc_info=True)
+            raise
 

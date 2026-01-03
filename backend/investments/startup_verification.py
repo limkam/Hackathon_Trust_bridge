@@ -7,15 +7,14 @@ from sqlalchemy.orm import Session
 import sys
 from pathlib import Path
 
-# Add backend/app to path for imports
+# Add backend directory to path for imports
 backend_dir = Path(__file__).parent.parent
-app_dir = backend_dir / "app"
-sys.path.insert(0, str(app_dir))
+sys.path.insert(0, str(backend_dir))
 
-from blockchain.startup_client import StartupClient
-from services.credibility_service import CredibilityService
-from db.models import Startup, User
-from utils.logger import logger
+from app.blockchain.startup_client import StartupClient
+from app.services.credibility_service import CredibilityService
+from app.db.models import Startup, User
+from app.utils.logger import logger
 
 
 class StartupVerification:

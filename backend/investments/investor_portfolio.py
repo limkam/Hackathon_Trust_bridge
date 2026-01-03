@@ -7,13 +7,12 @@ from sqlalchemy.orm import Session
 import sys
 from pathlib import Path
 
-# Add backend/app to path for imports
+# Add backend directory to path for imports
 backend_dir = Path(__file__).parent.parent
-app_dir = backend_dir / "app"
-sys.path.insert(0, str(app_dir))
+sys.path.insert(0, str(backend_dir))
 
-from db.models import Investment, User, Startup
-from utils.logger import logger
+from app.db.models import Investment, User, Startup
+from app.utils.logger import logger
 
 
 class InvestorPortfolio:

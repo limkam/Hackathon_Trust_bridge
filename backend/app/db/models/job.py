@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, ARRAY, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.base import Base
@@ -13,7 +13,7 @@ class Job(Base):
     title = Column(String(255), nullable=False)
     description = Column(String(2000), nullable=False)
     location = Column(String(255), nullable=False)
-    skills_required = Column(ARRAY(String), nullable=False)
+    skills_required = Column(JSON, nullable=False)  # Changed from ARRAY to JSON for SQLite compatibility
     min_experience = Column(Integer, default=0)  # Years
     created_at = Column(DateTime, default=datetime.utcnow)
 

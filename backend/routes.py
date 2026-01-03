@@ -7,27 +7,18 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import json
-from pathlib import Path
-
 import sys
 from pathlib import Path
 
-# Add backend/app to path for imports
-backend_dir = Path(__file__).parent
-app_dir = backend_dir / "app"
-sys.path.insert(0, str(app_dir))
-
-from db.session import get_db
-from db.models import User, Startup, Investment, Job
-from core.config import settings
-from utils.logger import logger
-from sqlalchemy import func, or_
-
-# Import new modules
-import sys
-from pathlib import Path
+# Add backend directory to path for imports
 backend_dir = Path(__file__).parent
 sys.path.insert(0, str(backend_dir))
+
+from app.db.session import get_db
+from app.db.models import User, Startup, Investment, Job
+from app.core.config import settings
+from app.utils.logger import logger
+from sqlalchemy import func, or_
 
 from cv.cv_generator import CVGenerator
 from cv.ats_optimizer import ATSOptimizer
@@ -158,7 +149,6 @@ async def upload_photo_endpoint(
     try:
         import shutil
         import uuid
-        from pathlib import Path
         
         upload_dir = Path(settings.UPLOAD_DIR)
         upload_dir.mkdir(parents=True, exist_ok=True)
@@ -544,7 +534,6 @@ async def upload_linkedin_pdf(
                             keywords.append(str(jt))
             
             if keywords:
-                from cv.job_aggregator import JobAggregator
                 aggregator = JobAggregator()
                 job_matches = aggregator.search_jobs(keywords, limit=10)
                 logger.info(f"Found {len(job_matches)} jobs")
@@ -687,10 +676,13 @@ async def search_jobs_from_cv(
             if request.keywords:
                 keyword_filters = []
                 for keyword in request.keywords[:5]:  # Limit to 5 keywords
+                    # Use JSON functions for SQLite compatibility (works with PostgreSQL too)
+                    # Cast JSON to text for searching
+                    skills_text = func.cast(Job.skills_required, String).ilike(f"%{keyword}%")
                     keyword_filter = (
                         Job.title.ilike(f"%{keyword}%") |
                         Job.description.ilike(f"%{keyword}%") |
-                        func.array_to_string(Job.skills_required, ', ').ilike(f"%{keyword}%")
+                        skills_text
                     )
                     keyword_filters.append(keyword_filter)
                 if keyword_filters:

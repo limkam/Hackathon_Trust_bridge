@@ -3,8 +3,8 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-    # Database
-    DATABASE_URL: str = "postgresql://user:password@localhost:5432/trustbridge_db"
+    # Database - defaults to SQLite for easier setup, can override with PostgreSQL
+    DATABASE_URL: str = "sqlite:///./trustbridge.db"
     
     # JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"

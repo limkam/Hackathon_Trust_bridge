@@ -93,7 +93,7 @@ def upgrade() -> None:
     sa.Column('title', sa.String(length=255), nullable=False),
     sa.Column('description', sa.String(length=2000), nullable=False),
     sa.Column('location', sa.String(length=255), nullable=False),
-    sa.Column('skills_required', sa.ARRAY(sa.String()), nullable=False),
+    sa.Column('skills_required', sa.JSON(), nullable=False),  # Changed from ARRAY to JSON for SQLite compatibility
     sa.Column('min_experience', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['startup_id'], ['startups.id'], ),
