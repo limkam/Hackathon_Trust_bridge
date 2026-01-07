@@ -43,11 +43,11 @@ export default function Login() {
       // Redirect based on user role
       const role = result.user?.role || 'student';
       if (role === 'founder' || role === 'startup') {
-        router.push('/startup/dashboard');
+        router.push('/startup-dashboard');
       } else if (role === 'investor') {
-        router.push('/investor/dashboard');
+        router.push('/investor-platform');
       } else {
-        router.push('/student/dashboard');
+        router.push('/cv-builder');
       }
     } else {
       toast.error(result.error || 'Login failed');
