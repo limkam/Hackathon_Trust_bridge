@@ -40,11 +40,11 @@ class UserResponse(BaseModel):
     full_name: str
     email: str
     role: str
-    wallet_address: str = None
-    university: str = None
-    company_name: str = None
-    verified_on_chain: str = "pending"
-    created_at: str
+    wallet_address: Optional[str] = None
+    university: Optional[str] = None
+    company_name: Optional[str] = None
+    verified_on_chain: Optional[str] = "pending"
+    created_at: Optional[str] = None
 
     class Config:
         from_attributes = True
