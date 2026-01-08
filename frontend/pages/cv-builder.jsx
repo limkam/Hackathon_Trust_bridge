@@ -117,6 +117,7 @@ export default function CVBuilderPage() {
 
   const fetchCV = async () => {
     if (!user?.id) return;
+    setLoading(true);
     try {
       const response = await fetch(`http://localhost:8001/api/cv/${user.id}`);
       if (response.ok) {
@@ -133,6 +134,8 @@ export default function CVBuilderPage() {
       console.error("Failed to fetch CV:", error);
       setCvData(null);
       setActiveTab("wizard");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -350,7 +353,11 @@ export default function CVBuilderPage() {
         return <JobApplicationTracker userId={user?.id} />;
 
       default:
-        return null;
+        return (
+          <div className="card p-6 text-center">
+            <p className="text-gray-600">Select a feature from the sidebar</p>
+          </div>
+        );
     }
   };
 

@@ -79,13 +79,13 @@ export default function Register() {
     
     if (result.success) {
       toast.success("Registration successful!");
-      // Redirect based on user role
+      // Redirect based on user role to existing pages
       if (formData.role === "founder" || formData.role === "startup") {
-        router.push("/startup/dashboard");
+        router.push("/startup-dashboard");
       } else if (formData.role === "investor") {
-        router.push("/investor/dashboard");
+        router.push("/investor-platform");
       } else {
-        router.push("/student/dashboard");
+        router.push("/cv-builder");
       }
     } else {
       toast.error(result.error || "Registration failed");

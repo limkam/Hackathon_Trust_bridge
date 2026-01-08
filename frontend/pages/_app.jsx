@@ -5,13 +5,20 @@ import PrivyWrapper from '../components/PrivyWrapper';
 import { Toaster } from 'react-hot-toast';
 import Layout from '../components/Layout';
 import Head from 'next/head';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Check if Privy App ID is configured
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PRIVY_ENABLED = PRIVY_APP_ID && PRIVY_APP_ID !== 'your-privy-app-id' && PRIVY_APP_ID.trim() !== '';
 
 function MyApp({ Component, pageProps }) {
+  // Fix hydration by only rendering on client
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Register Service Worker for PWA
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
@@ -68,6 +75,18 @@ function MyApp({ Component, pageProps }) {
       setTimeout(() => clearInterval(checkPrivyScripts), 10000);
     }
   }, []);
+
+  // Show loading while client mounts (prevents hydration mismatch)
+  if (!mounted) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f4f8' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="animate-spin" style={{ width: 40, height: 40, border: '3px solid #ddd', borderTop: '3px solid #0A66C2', borderRadius: '50%', margin: '0 auto' }}></div>
+          <p style={{ marginTop: 16, color: '#666' }}>Loading TrustBridge...</p>
+        </div>
+      </div>
+    );
+  }
 
   const coreApp = (
     <AuthProvider>
