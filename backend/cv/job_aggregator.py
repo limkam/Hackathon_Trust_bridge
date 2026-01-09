@@ -340,14 +340,26 @@ class JobAggregator:
         return clean
     
     def _format_adzuna_salary(self, job: Dict) -> str:
-        """Format Adzuna salary range."""
+        """Format Adzuna salary range with safe type conversion."""
         min_sal = job.get('salary_min')
         max_sal = job.get('salary_max')
         
-        if min_sal and max_sal:
-            return f"£{int(min_sal):,} - £{int(max_sal):,}"
-        elif min_sal:
-            return f"£{int(min_sal):,}+"
-        elif max_sal:
-            return f"Up to £{int(max_sal):,}"
+        # Safe conversion helper
+        def safe_int(val):
+            if val is None:
+                return None
+            try:
+                return int(float(val))  # Handle string/float values
+            except (ValueError, TypeError):
+                return None
+        
+        min_val = safe_int(min_sal)
+        max_val = safe_int(max_sal)
+        
+        if min_val is not None and max_val is not None:
+            return f"£{min_val:,} - £{max_val:,}"
+        elif min_val is not None:
+            return f"£{min_val:,}+"
+        elif max_val is not None:
+            return f"Up to £{max_val:,}"
         return ''
